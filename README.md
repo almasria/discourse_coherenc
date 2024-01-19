@@ -1,1 +1,1 @@
-# Text Coherence
+# Discourse Coherence
