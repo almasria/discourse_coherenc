@@ -1,6 +1,7 @@
-from typing import Self
+# from typing import Self
 from embedding_model import EmbeddingModel
 from similarity_metric import SimilarityMetric
+import numpy as np
 
 
 
@@ -22,7 +23,7 @@ class Discourse:
         self.sentences = sentences  
         self.coherence_scores = {}
 
-    def add_sentence(self, sentence: str=None) -> Self:
+    def add_sentence(self, sentence: str=None):
         '''
         A method to add a sentence to the discourse
 
@@ -37,7 +38,17 @@ class Discourse:
         self.sentences.append(sentence)
         return self
     
-    def coherence_score(self, model: EmbeddingModel=None, metric: SimilarityMetric=None):
+    def coherence_score(self, metric):
+        '''
+        '''
+
+        computed_metrics = metric.compute(predictions=self.sentences[1:], references=self.sentences[:-1], lang="en")
+
+
+        return np.mean(computed_metrics['f1'])
+                       
+
+    def update_score(self):
         pass
 
     def plot_coherence(self):
