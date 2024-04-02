@@ -1,8 +1,8 @@
 from typing import List, Union
 import numpy as np
-from utils import compute_statistic
+from utils import compute_statistic, cos_sim
 from torch import nn
-import pandas as pd
+import matplotlib.pyplot as plt
 
 
 class QuerySession:
@@ -10,11 +10,11 @@ class QuerySession:
 
     def __init__(
         self,
-        queries: List[str] = None,
-        normalize_embeddings: bool = False,
+        queries: List[str] = None,        
         embedding_model: nn.Sequential = None,
         context_window_size: int = 1,
         statistic: str = "mean",
+        normalize_embeddings: bool = False
     ) -> None:
         """
         Initialize the QuerySession object
@@ -34,7 +34,7 @@ class QuerySession:
             self.embedding_model = embedding_model
             self.normalized_session = normalize_embeddings
             self.embeddings = self._embed_queries(
-                queries=queries,
+                queries=self.queries,
                 embedding_model=self.embedding_model,
                 normalize_embeddings=self.normalized_session,
             )
@@ -152,9 +152,7 @@ class QuerySession:
                 float: Local coherence score
         """
         if current_vector is not None and neighbor_vector is not None:
-            return np.dot(current_vector, neighbor_vector) / (
-                np.linalg.norm(current_vector) * np.linalg.norm(neighbor_vector)
-            )
+            return cos_sim(current_vector, neighbor_vector)
 
     def compute_global_coherence(
         self, context_window: int = 1, statistic: str = "mean"
@@ -188,3 +186,18 @@ class QuerySession:
             compute_statistic(numbers=local_coherence_scores, statistic=statistic),
             local_coherence_scores,
         )
+
+    def plot_local_coherence(self) -> None:
+        """
+        Plot the local coherence scores for the session
+            Args:
+                None
+
+            Returns:
+                None
+        """
+        plt.plot(range(1, self.session_size), self.local_coherence_scores)
+        plt.xlabel("Query Position")
+        plt.ylabel("Local Coherence Score")
+        plt.title("Local Coherence Scores")
+        plt.show()

@@ -1,10 +1,13 @@
 import statistics
 from typing import List
 import torch
+import numpy as np
 
 
 # Mean Pooling - Take attention mask into account for correct averaging
-def mean_pooling(model_output, attention_mask) -> torch.Tensor:
+def mean_pooling(
+    model_output: torch.Tensor = None, attention_mask: torch.Tensor = None
+) -> torch.Tensor:
     """
     Mean pooling to get sentence embeddings
         Args:
@@ -47,3 +50,15 @@ def compute_statistic(numbers: List[float], statistic: str = "mean") -> float:
         raise ValueError(
             "Invalid statistic parameter. Expected 'mean', 'median', or 'mode'."
         )
+
+def cos_sim(v1: np.ndarray, v2: np.ndarray) -> float:
+    """
+    Compute the cosine similarity between two vectors
+        Args:
+            v1 (np.ndarray): The first vector
+            v2 (np.ndarray): The second vector
+
+        Returns:
+            float: Cosine similarity
+    """
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
