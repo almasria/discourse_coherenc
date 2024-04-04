@@ -2,6 +2,7 @@ import statistics
 from typing import List
 import torch
 import numpy as np
+import torch.nn.functional as F
 
 
 # Mean Pooling - Take attention mask into account for correct averaging
@@ -62,3 +63,14 @@ def cos_sim(v1: np.ndarray, v2: np.ndarray) -> float:
             float: Cosine similarity
     """
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+def normalize_vectors(vectors: torch.Tensor) -> torch.Tensor:
+    """
+    Normalize a list of vectors
+        Args:
+            vectors (torch.Tensor): Input vectors
+
+        Returns:
+            torch.Tensor: Normalized vectors
+    """
+    return F.normalize(vectors, p=2, dim=1)

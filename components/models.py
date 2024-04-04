@@ -1,8 +1,7 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
-import torch.nn.functional as F
 from typing import List
-from utils import mean_pooling
+from utils import mean_pooling, normalize_vectors
 
 
 class EmbeddingModel:
@@ -72,7 +71,7 @@ class EmbeddingModel:
 
             if normalize_embeddings:
                 # Normalize embeddings
-                sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+                sentence_embeddings = normalize_vectors(sentence_embeddings)
 
             if not return_tensors:
                 sentence_embeddings = sentence_embeddings.numpy()
