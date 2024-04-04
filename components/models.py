@@ -47,13 +47,13 @@ class EmbeddingModel:
         """
         Embed a list of sentences
 
-            Args:
-                sentences (List[str]): List of sentences to embed
-                normalzied (bool): Normalize embeddings
-                return_tensors (bool): Return embeddings as tensors
+        Args:
+            sentences (List[str]): List of sentences to embed
+            normalzied (bool): Normalize embeddings
+            return_tensors (bool): Return embeddings as tensors
 
-            Returns:
-                torch.Tensor: Embeddings for the input sentences
+        Returns:
+            torch.Tensor: Embeddings for the input sentences
 
         """
         if sentences is not None:
