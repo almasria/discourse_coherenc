@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 from typing import List
-from utils import mean_pooling, normalize_vectors
+from utils import mean_pooling, normalize_vectors, cls_pooling
 
 
 class EmbeddingModel:
@@ -15,7 +15,7 @@ class EmbeddingModel:
         None
     """
 
-    allowed_models = ["all-mpnet-base-v2", "all-MiniLM-L6-v2"]
+    allowed_models = ["all-mpnet-base-v2", "all-MiniLM-L6-v2", "nli-distilroberta-base-v2", "mxbai-embed-large-v1"]
 
     def __init__(self, model_name: str = "all-mpnet-base-v2") -> None:
         """
@@ -29,12 +29,15 @@ class EmbeddingModel:
         """
 
         if model_name in self.allowed_models:
+            root_model_name = "sentence-transformers/" if model_name != "mxbai-embed-large-v1" else "mixedbread-ai/"
             self.tokenizer = AutoTokenizer.from_pretrained(
-                "sentence-transformers/" + model_name
+                root_model_name + model_name
             )
             self.model = AutoModel.from_pretrained(
-                "sentence-transformers/" + model_name
+                root_model_name + model_name
             )
+
+            self.model_name = model_name
         else:
             raise Exception("Model not supported!")
 
@@ -61,13 +64,25 @@ class EmbeddingModel:
             encoded_input = self.tokenizer(
                 sentences, padding=True, truncation=True, return_tensors="pt"
             )
+
             # Compute token embeddings
-            with torch.no_grad():
-                model_output = self.model(**encoded_input)
-            # Perform pooling
-            sentence_embeddings = mean_pooling(
-                model_output, encoded_input["attention_mask"]
-            )
+            if self.model_name == "mxbai-embed-large-v1":
+
+                # return_tensors = True
+
+                for k, v in encoded_input.items():
+                    encoded_input[k] = v
+                outputs = self.model(**encoded_input ).last_hidden_state
+                sentence_embeddings = cls_pooling(outputs, encoded_input , 'cls')
+
+            
+            else:
+                with torch.no_grad():
+                    model_output = self.model(**encoded_input)
+                # Perform pooling
+                sentence_embeddings = mean_pooling(
+                    model_output, encoded_input["attention_mask"]
+                )
 
             if normalize_embeddings:
                 # Normalize embeddings
@@ -77,3 +92,16 @@ class EmbeddingModel:
                 sentence_embeddings = sentence_embeddings.numpy()
 
             return sentence_embeddings
+
+    def _transform_query(query: str) -> str:
+        """ 
+        For retrieval, add the prompt for query (to be used with mxbai-embed-large-v1).
+
+        Args:
+            query (str): Query to transform
+
+        Returns
+            str: Transformed query
+
+        """
+        return f'Represent this sentence for searching relevant passages: {query}'

@@ -1,8 +1,9 @@
 from typing import List, Union
 import numpy as np
-from utils import compute_statistic, cos_sim
+from utils import compute_statistics, cos_sim
 from torch import nn
 import matplotlib.pyplot as plt
+from scipy.interpolate import make_interp_spline
 
 
 class QuerySession:
@@ -13,7 +14,7 @@ class QuerySession:
         queries: List[str] = None,        
         embedding_model: nn.Sequential = None,
         context_window_size: int = 1,
-        statistic: str = "mean",
+        statistics: str = "mean",
         normalize_embeddings: bool = False
     ) -> None:
         """
@@ -23,7 +24,7 @@ class QuerySession:
                 normalize_embeddings (bool): Use normalized embeddings
                 embedding_model (str): Sentence embedding model
                 context_window_size (int): Context window size
-                statistic (str): Statistic to use when computing global coherence score
+                statistics (str): Statistic to use when computing global coherence score
 
             Returns:
                 None
@@ -40,10 +41,10 @@ class QuerySession:
             )
             self.global_coherence_score, self.local_coherence_scores = (
                 self.compute_global_coherence(
-                    context_window=context_window_size, statistic=statistic
+                    context_window=context_window_size, statistics=statistics
                 )
             )
-            self.statistic = statistic
+            self.statistics = statistics
             self.context_window_size = context_window_size
 
     def _embed_queries(
@@ -155,13 +156,13 @@ class QuerySession:
             return cos_sim(current_vector, neighbor_vector)
 
     def compute_global_coherence(
-        self, context_window: int = 1, statistic: str = "mean"
+        self, context_window: int = 1, statistics: str = "mean"
     ) -> float:
         """
         Compute the global coherence score for the session
             Args:
                 context_window (int): Context window size
-                statistic (str): Statistic to use when computing the global coherence score
+                statistics (str): Statistic to use when computing the global coherence score
 
             Returns:
                 float: Global coherence score
@@ -176,6 +177,15 @@ class QuerySession:
                 context_vector = self._compute_context_vector(
                     position=i, context_window=context_window
                 )
+
+                if self.embedding_model == "mxbai-embed-large-v1":
+                    embedding = self.embedding_model._transform_query(
+                        self.queries[i]
+                    )
+                    embedding = self.embedding_model.embed(
+                        sentences=[embedding], normalize_embeddings=self.normalized_session
+                    )
+
                 local_coherence_scores.append(
                     self._compute_local_coherence(
                         current_vector=embedding, neighbor_vector=context_vector
@@ -183,11 +193,11 @@ class QuerySession:
                 )
 
         return (
-            compute_statistic(numbers=local_coherence_scores, statistic=statistic),
+            [compute_statistics(numbers=local_coherence_scores, statistic=statistics)],
             local_coherence_scores,
         )
 
-    def plot_local_coherence(self) -> None:
+    def plot_local_coherence(self, smooth: bool=True, annotated: bool = True) -> None:
         """
         Plot the local coherence scores for the session
             Args:
@@ -196,8 +206,47 @@ class QuerySession:
             Returns:
                 None
         """
-        plt.plot(range(1, self.session_size), self.local_coherence_scores)
+
+        X = list(range(1, self.session_size))
+        Y = self.local_coherence_scores
+
+        if smooth:
+            X_Y_Spline = make_interp_spline(X, Y)
+
+            X = np.linspace(min(X),max(X), 500)
+            Y = X_Y_Spline(X)
+
+            # X_new = np.linspace(min(X), max(X), 300)
+            # spl = make_interp_spline(X, Y, k=3)
+            # Y_smooth = spl(X_new)
+            # plt.plot(X_new, Y_smooth)
+
+
+        plt.plot(X, Y)
+
+        # # Add text annotations to the plot
+        # if annotated:              
+        #     X_ = self.session_size
+        #     Y_ = self.local_coherence_scores     
+        #     for i in range(1, X_):
+        #         plt.text(X_[i], Y_[i], f"{Y_[i]:.2f}", ha='left', va='center', bbox=dict(facecolor='white', edgecolor='black'))
         plt.xlabel("Query Position")
         plt.ylabel("Local Coherence Score")
         plt.title("Local Coherence Scores")
         plt.show()
+
+
+    def print_queries(self) -> None:
+        """
+        Print the queries in the session
+            Args:
+                None
+
+            Returns:
+                None
+        """
+        for i,query in enumerate(self.queries):
+            print(i, query)
+
+
+        

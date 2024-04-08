@@ -46,7 +46,7 @@ class DataProcessor:
         decontextualized: bool = True,
         embedding_model: str = "all-mpnet-base-v2",
         context_window_size: int = 1,
-        statistic: str = "mean",
+        statistics: str = "mean",
         normalize_embeddings: bool = False,
     ) -> List[QuerySession]:
         """
@@ -56,14 +56,14 @@ class DataProcessor:
             decontextualized (bool): Use decontextualized queries
             embedding_model (str): The name of the embedding model
             context_window_size (int): Context window size
-            statistic (str): Statistic to use when computing global coherence score
+            statistics (str): Statistics to use when computing global coherence score
             normalize_embeddings (bool): Use normalized embeddings
         
         Returns:
             List[QuerySession]: List of QuerySession objects
         """
         data = self._read_json_file()
-        sessions = []
+        # sessions = []
         query_field = "oracle_query" if decontextualized else "query"
         embedding_model = EmbeddingModel(model_name=embedding_model)
         for i, session in enumerate(data):
@@ -72,10 +72,13 @@ class DataProcessor:
                 queries=queries,
                 embedding_model=embedding_model,
                 context_window_size=context_window_size,
-                statistic=statistic,
+                statistics=statistics,
                 normalize_embeddings=normalize_embeddings,
             )
-            sessions.append(session_obj)
-            if i > 10:
-                break
-        return sessions
+            # sessions.append(session_obj)
+            # if i > 10:
+            #     break
+
+            yield session_obj
+
+        # return sessions

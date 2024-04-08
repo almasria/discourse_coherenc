@@ -1,5 +1,5 @@
 import statistics
-from typing import List
+from typing import List, Dict
 import torch
 import numpy as np
 import torch.nn.functional as F
@@ -31,7 +31,7 @@ def mean_pooling(
 
 
 # Compute the mean, median, or mode of a list of numbers
-def compute_statistic(numbers: List[float], statistic: str = "mean") -> float:
+def compute_statistics(numbers: List[float], statistic: str = "mean") -> float:
     """
     Calculate the mean, median, or mode of a list of numbers
         Args:
@@ -47,6 +47,8 @@ def compute_statistic(numbers: List[float], statistic: str = "mean") -> float:
         return statistics.median(numbers)
     elif statistic == "mode":
         return statistics.mode(numbers)
+    elif statistic == "all":    
+        return statistics.mean(numbers), statistics.median(numbers), statistics.mode(numbers)
     else:
         raise ValueError(
             "Invalid statistic parameter. Expected 'mean', 'median', or 'mode'."
@@ -74,3 +76,13 @@ def normalize_vectors(vectors: torch.Tensor) -> torch.Tensor:
             torch.Tensor: Normalized vectors
     """
     return F.normalize(vectors, p=2, dim=1)
+
+def cls_pooling(outputs: torch.Tensor, inputs: Dict,  strategy: str = 'cls') -> np.ndarray:
+    if strategy == 'cls':
+        outputs = outputs[:, 0]
+    elif strategy == 'mean':
+        outputs = torch.sum(
+            outputs * inputs["attention_mask"][:, :, None], dim=1) / torch.sum(inputs["attention_mask"])
+    else:
+        raise NotImplementedError
+    return outputs.detach().cpu()
