@@ -42,17 +42,24 @@ def compute_statistics(numbers: List[float], statistic: str = "mean") -> float:
             float: Calculated statistic
     """
     if statistic == "mean":
-        return statistics.mean(numbers)
+        return {statistic: statistics.mean(numbers)}
     elif statistic == "median":
-        return statistics.median(numbers)
+        return {statistic: statistics.median(numbers)}
     elif statistic == "mode":
-        return statistics.mode(numbers)
-    elif statistic == "all":    
-        return statistics.mean(numbers), statistics.median(numbers), statistics.mode(numbers)
+        return {statistic: statistics.mode(numbers)}
+    elif statistic == "all":
+        return {
+            "mean": statistics.mean(numbers),
+            "median": statistics.median(numbers),
+            "mode": statistics.mode(numbers),
+            "variance": statistics.variance(numbers),
+            "stdev": statistics.stdev(numbers),
+        }
     else:
         raise ValueError(
             "Invalid statistic parameter. Expected 'mean', 'median', or 'mode'."
         )
+
 
 def cos_sim(v1: np.ndarray, v2: np.ndarray) -> float:
     """
@@ -66,6 +73,7 @@ def cos_sim(v1: np.ndarray, v2: np.ndarray) -> float:
     """
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
+
 def normalize_vectors(vectors: torch.Tensor) -> torch.Tensor:
     """
     Normalize a list of vectors
@@ -77,12 +85,45 @@ def normalize_vectors(vectors: torch.Tensor) -> torch.Tensor:
     """
     return F.normalize(vectors, p=2, dim=1)
 
-def cls_pooling(outputs: torch.Tensor, inputs: Dict,  strategy: str = 'cls') -> np.ndarray:
-    if strategy == 'cls':
+
+def cls_pooling(
+    outputs: torch.Tensor, inputs: Dict, strategy: str = "cls"
+) -> np.ndarray:
+    if strategy == "cls":
         outputs = outputs[:, 0]
-    elif strategy == 'mean':
+    elif strategy == "mean":
         outputs = torch.sum(
-            outputs * inputs["attention_mask"][:, :, None], dim=1) / torch.sum(inputs["attention_mask"])
+            outputs * inputs["attention_mask"][:, :, None], dim=1
+        ) / torch.sum(inputs["attention_mask"])
     else:
         raise NotImplementedError
     return outputs.detach().cpu()
+
+
+def euclidean_distance(vector1, vector2):
+    """
+    Compute the Euclidean distance between two vectors.
+
+    Args:
+        vector1 (np.ndarray): First vector.
+        vector2 (np.ndarray): Second vector.
+
+    Returns:
+        float: Euclidean distance between the two vectors.
+    """
+    return np.linalg.norm(vector1 - vector2)
+
+
+ 
+def manhattan_distance(vector1, vector2):
+    """
+    Compute the Manhattan distance between two vectors.
+
+    Args:
+        vector1 (np.ndarray): First vector.
+        vector2 (np.ndarray): Second vector.
+
+    Returns:
+        float: Manhattan distance between the two vectors.
+    """
+    return np.sum(np.abs(vector1 - vector2))

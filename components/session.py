@@ -1,6 +1,6 @@
 from typing import List, Union
 import numpy as np
-from utils import compute_statistics, cos_sim
+from utils import compute_statistics, cos_sim, euclidean_distance, manhattan_distance
 from torch import nn
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
@@ -15,7 +15,8 @@ class QuerySession:
         embedding_model: nn.Sequential = None,
         context_window_size: int = 1,
         statistics: str = "mean",
-        normalize_embeddings: bool = False
+        normalize_embeddings: bool = False,
+        metric: str = "cosine"
     ) -> None:
         """
         Initialize the QuerySession object
@@ -41,11 +42,12 @@ class QuerySession:
             )
             self.global_coherence_score, self.local_coherence_scores = (
                 self.compute_global_coherence(
-                    context_window=context_window_size, statistics=statistics
+                    context_window=context_window_size, statistics=statistics, metric=metric
                 )
             )
             self.statistics = statistics
             self.context_window_size = context_window_size
+            self.metric = metric
 
     def _embed_queries(
         self,
@@ -141,7 +143,7 @@ class QuerySession:
         return context_vector
 
     def _compute_local_coherence(
-        self, current_vector: np.ndarray = None, neighbor_vector: np.ndarray = None
+        self, current_vector: np.ndarray = None, neighbor_vector: np.ndarray = None, metric: str = "cosine"
     ) -> float:
         """
         Compute the local coherence between a query and its context vector
@@ -152,11 +154,18 @@ class QuerySession:
             Returns:
                 float: Local coherence score
         """
-        if current_vector is not None and neighbor_vector is not None:
+        if metric == "cosine":
             return cos_sim(current_vector, neighbor_vector)
+        elif metric == "euclidean":
+            return euclidean_distance(current_vector, neighbor_vector)
+        elif metric == "manhattan":
+            return manhattan_distance(current_vector, neighbor_vector)
+        else:
+            raise ValueError("Invalid metric. Expected 'cosine', 'euclidean', or 'manhattan'.")
+
 
     def compute_global_coherence(
-        self, context_window: int = 1, statistics: str = "mean"
+        self, context_window: int = 1, statistics: str = "mean", metric: str = "cosine"
     ) -> float:
         """
         Compute the global coherence score for the session
@@ -188,12 +197,12 @@ class QuerySession:
 
                 local_coherence_scores.append(
                     self._compute_local_coherence(
-                        current_vector=embedding, neighbor_vector=context_vector
+                        current_vector=embedding, neighbor_vector=context_vector, metric=metric
                     )
                 )
 
         return (
-            [compute_statistics(numbers=local_coherence_scores, statistic=statistics)],
+            compute_statistics(numbers=local_coherence_scores, statistic=statistics),
             local_coherence_scores,
         )
 
@@ -232,7 +241,8 @@ class QuerySession:
         #         plt.text(X_[i], Y_[i], f"{Y_[i]:.2f}", ha='left', va='center', bbox=dict(facecolor='white', edgecolor='black'))
         plt.xlabel("Query Position")
         plt.ylabel("Local Coherence Score")
-        plt.title("Local Coherence Scores")
+        plt.title(self.embedding_model.model_name)
+        plt.figtext(0.95, 0.5, f"Mean: {self.global_coherence_score["mean"]:.2f}\n\nMedian: {self.global_coherence_score["median"]:.2f}\n\nSD: {self.global_coherence_score["stdev"]:.2f}\n\nMetric: {self.metric}\n\nSession ID: {}", color='maroon')
         plt.show()
 
 

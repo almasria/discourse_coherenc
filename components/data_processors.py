@@ -48,6 +48,7 @@ class DataProcessor:
         context_window_size: int = 1,
         statistics: str = "mean",
         normalize_embeddings: bool = False,
+        metric: str = "cosine"
     ) -> List[QuerySession]:
         """
         Export sessions from the json file
@@ -74,6 +75,7 @@ class DataProcessor:
                 context_window_size=context_window_size,
                 statistics=statistics,
                 normalize_embeddings=normalize_embeddings,
+                metric=metric
             )
             # sessions.append(session_obj)
             # if i > 10:
@@ -82,3 +84,12 @@ class DataProcessor:
             yield session_obj
 
         # return sessions
+
+    def export_queries(self):
+        data = self._read_json_file()
+        sessions = []  
+        
+        for i, session in enumerate(data):
+            queries = [query["oracle_query"] for query in session["turns"]]
+            sessions.append(queries)
+        return sessions
