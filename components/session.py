@@ -38,7 +38,7 @@ class QuerySession:
             self.embeddings = self._embed_queries(
                 queries=self.queries,
                 embedding_model=self.embedding_model,
-                normalize_embeddings=self.normalized_session,
+                normalize_embeddings=normalize_embeddings,
             )
             self.global_coherence_score, self.local_coherence_scores = (
                 self.compute_global_coherence(
@@ -242,7 +242,7 @@ class QuerySession:
         plt.xlabel("Query Position")
         plt.ylabel("Local Coherence Score")
         plt.title(self.embedding_model.model_name)
-        plt.figtext(0.95, 0.5, f"Mean: {self.global_coherence_score["mean"]:.2f}\n\nMedian: {self.global_coherence_score["median"]:.2f}\n\nSD: {self.global_coherence_score["stdev"]:.2f}\n\nMetric: {self.metric}\n\nSession ID: {}", color='maroon')
+        plt.figtext(0.95, 0.5, f"Mean: {self.global_coherence_score["mean"]:.2f}\n\nMedian: {self.global_coherence_score["median"]:.2f}\n\nSD: {self.global_coherence_score["stdev"]:.2f}\n\nMetric: {self.metric}", color='maroon')
         plt.show()
 
 
