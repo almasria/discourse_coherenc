@@ -206,7 +206,7 @@ class QuerySession:
             local_coherence_scores,
         )
 
-    def plot_local_coherence(self, smooth: bool=True, annotated: bool = True) -> None:
+    def plot_local_coherence(self, smooth: bool=True, annotated: bool = True, threshold: float = 0.0) -> None:
         """
         Plot the local coherence scores for the session
             Args:
@@ -218,6 +218,10 @@ class QuerySession:
 
         X = list(range(1, self.session_size))
         Y = self.local_coherence_scores
+
+        if threshold > 0.0:            
+            Y = [1.0 if y > threshold else 0.0 for y in Y]
+
 
         if smooth:
             X_Y_Spline = make_interp_spline(X, Y)
@@ -242,7 +246,7 @@ class QuerySession:
         plt.xlabel("Query Position")
         plt.ylabel("Local Coherence Score")
         plt.title(self.embedding_model.model_name)
-        plt.figtext(0.95, 0.5, f"Mean: {self.global_coherence_score["mean"]:.2f}\n\nMedian: {self.global_coherence_score["median"]:.2f}\n\nSD: {self.global_coherence_score["stdev"]:.2f}\n\nMetric: {self.metric}", color='maroon')
+        plt.figtext(0.95, 0.5, f"Mean: {self.global_coherence_score["mean"]:.2f}\n\nMedian: {self.global_coherence_score["median"]:.2f}\n\nSD: {self.global_coherence_score["stdev"]:.2f}\n\nMetric: {self.metric}\n\nThreshold: {threshold}", color='maroon')
         plt.show()
 
 
