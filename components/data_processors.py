@@ -86,6 +86,15 @@ class DataProcessor:
         # return sessions
 
     def export_queries(self):
+        """
+        Export queries from the json file
+        
+        Args:
+            None
+
+        Returns:
+            List[List[str]]: List of list of queries
+        """
         data = self._read_json_file()
         sessions = []  
         
